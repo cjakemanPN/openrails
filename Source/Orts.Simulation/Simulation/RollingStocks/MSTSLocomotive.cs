@@ -2398,7 +2398,7 @@ namespace Orts.Simulation.RollingStocks
                         if (pric >= 0.5)
                             BaseFrictionCoefficientFactor = Math.Min((pric * 0.0078f + 0.45f), 0.8f);
                         else
-                            BaseFrictionCoefficientFactor = 0.4539f + 1.0922f * (0.5f - pric);
+                            BaseFrictionCoefficientFactor = Math.Min((0.4539f + 1.0922f * (0.5f - pric)), 0.8f);
                     }
                     else // if not proportional to precipitation use fixed friction value of 0.8 x friction coefficient of 0.33
                     {
