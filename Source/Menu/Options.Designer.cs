@@ -93,6 +93,7 @@
             this.checkExtendedAIShunting = new System.Windows.Forms.CheckBox();
             this.checkAutopilot = new System.Windows.Forms.CheckBox();
             this.checkHotStart = new System.Windows.Forms.CheckBox();
+            this.checkSimpleControlPhysics = new System.Windows.Forms.CheckBox();
             this.checkCurveSpeedDependent = new System.Windows.Forms.CheckBox();
             this.checkCurveResistanceDependent = new System.Windows.Forms.CheckBox();
             this.checkTunnelResistanceDependent = new System.Windows.Forms.CheckBox();
@@ -118,6 +119,7 @@
             this.label17 = new System.Windows.Forms.Label();
             this.checkDataLogPhysics = new System.Windows.Forms.CheckBox();
             this.checkDataLogSteamPerformance = new System.Windows.Forms.CheckBox();
+            this.checkVerboseConfigurationMessages = new System.Windows.Forms.CheckBox();
             this.tabPageEvaluate = new System.Windows.Forms.TabPage();
             this.checkListDataLogTSContents = new System.Windows.Forms.CheckedListBox();
             this.labelDataLogTSInterval = new System.Windows.Forms.Label();
@@ -954,6 +956,7 @@
             // 
             this.tabPageSimulation.Controls.Add(this.groupBox1);
             this.tabPageSimulation.Controls.Add(this.checkHotStart);
+            this.tabPageSimulation.Controls.Add(this.checkSimpleControlPhysics);
             this.tabPageSimulation.Controls.Add(this.checkCurveSpeedDependent);
             this.tabPageSimulation.Controls.Add(this.checkCurveResistanceDependent);
             this.tabPageSimulation.Controls.Add(this.checkTunnelResistanceDependent);
@@ -1038,6 +1041,16 @@
             this.checkHotStart.TabIndex = 8;
             this.checkHotStart.Text = "Steam locomotive hot start";
             this.checkHotStart.UseVisualStyleBackColor = true;
+            //
+            // checkSimpleControlPhysics
+            // 
+            this.checkSimpleControlPhysics.AutoSize = true;
+            this.checkSimpleControlPhysics.Location = new System.Drawing.Point(6, 215);
+            this.checkSimpleControlPhysics.Name = "checkSimpleControlPhysics";
+            this.checkSimpleControlPhysics.Size = new System.Drawing.Size(151, 17);
+            this.checkSimpleControlPhysics.TabIndex = 8;
+            this.checkSimpleControlPhysics.Text = "Simple Contol and Physics";
+            this.checkSimpleControlPhysics.UseVisualStyleBackColor = true;
             // 
             // checkCurveSpeedDependent
             // 
@@ -1213,6 +1226,7 @@
             this.tabPageDataLogger.Controls.Add(this.label17);
             this.tabPageDataLogger.Controls.Add(this.checkDataLogPhysics);
             this.tabPageDataLogger.Controls.Add(this.checkDataLogSteamPerformance);
+            this.tabPageDataLogger.Controls.Add(this.checkVerboseConfigurationMessages);
             this.tabPageDataLogger.Location = new System.Drawing.Point(4, 22);
             this.tabPageDataLogger.Name = "tabPageDataLogger";
             this.tabPageDataLogger.Padding = new System.Windows.Forms.Padding(3);
@@ -1323,6 +1337,16 @@
             this.checkDataLogSteamPerformance.TabIndex = 6;
             this.checkDataLogSteamPerformance.Text = "Log Steam performance data";
             this.checkDataLogSteamPerformance.UseVisualStyleBackColor = true;
+            // 
+            // checkVerboseConfigurationMessages
+            // 
+            this.checkVerboseConfigurationMessages.AutoSize = true;
+            this.checkVerboseConfigurationMessages.Location = new System.Drawing.Point(6, 236);
+            this.checkVerboseConfigurationMessages.Name = "checkVerboseConfigurationMessages";
+            this.checkVerboseConfigurationMessages.Size = new System.Drawing.Size(163, 17);
+            this.checkVerboseConfigurationMessages.TabIndex = 6;
+            this.checkVerboseConfigurationMessages.Text = "Verbose ENG/WAG configuration messages";
+            this.checkVerboseConfigurationMessages.UseVisualStyleBackColor = true;
             // 
             // tabPageEvaluate
             // 
@@ -2370,6 +2394,7 @@
         private System.Windows.Forms.CheckBox checkDataLogPhysics;
         private System.Windows.Forms.CheckBox checkDataLogPerformance;
         private System.Windows.Forms.CheckBox checkDataLogSteamPerformance;
+        private System.Windows.Forms.CheckBox checkVerboseConfigurationMessages;
         private System.Windows.Forms.CheckBox checkDataLogger;
         private System.Windows.Forms.CheckBox checkDataLogMisc;
         private System.Windows.Forms.Label label18;
@@ -2401,6 +2426,7 @@
         private System.Windows.Forms.CheckBox checkAlerterExternal;
         private System.Windows.Forms.CheckBox checkCurveSpeedDependent;
         private System.Windows.Forms.CheckBox checkHotStart;
+        private System.Windows.Forms.CheckBox checkSimpleControlPhysics;
         private System.Windows.Forms.CheckBox checkFastFullScreenAltTab;
         private System.Windows.Forms.CheckBox checkVerticalSync;
         private System.Windows.Forms.ComboBox comboPressureUnit;

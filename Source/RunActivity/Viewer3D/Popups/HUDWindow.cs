@@ -604,10 +604,8 @@ namespace Orts.Viewer3D.Popups
 
                         if ((Viewer.PlayerLocomotive as MSTSLocomotive).VacuumBrakeEQFitted)
                             {
-                                TableAddLines(table, String.Format("{0}\t\t{1}\t\t{2}\t{3}\t\t{4}",
+                                TableAddLines(table, String.Format("{0}\t\t{1}\t\t{2}",
                                 Viewer.Catalog.GetString("PlayerLoco"),
-                                Viewer.Catalog.GetString("Main reservoir"),
-                                FormatStrings.FormatPressure(Vac.FromPress((Viewer.PlayerLocomotive as MSTSLocomotive).VacuumMainResVacuumPSIAorInHg), PressureUnit.InHg, PressureUnit.InHg, true),
                                 Viewer.Catalog.GetString("Exhauster"),
                                 (Viewer.PlayerLocomotive as MSTSLocomotive).VacuumExhausterIsOn ? Viewer.Catalog.GetString("on") : Viewer.Catalog.GetString("off")));
                             }
@@ -841,7 +839,7 @@ namespace Orts.Viewer3D.Popups
                 var car = train.Cars[j];
                 TableSetCell(table, 0, "{0}", car.CarID);
                 TableSetCell(table, 1, "{0}", FormatStrings.FormatForce(car.TotalForceN, car.IsMetric));
-                TableSetCell(table, 2, "{0}", FormatStrings.FormatForce(car.MotiveForceN, car.IsMetric));
+                TableSetCell(table, 2, "{0}{1}", FormatStrings.FormatForce(car.MotiveForceN, car.IsMetric), car.WheelSlip ? "!!!" : car.WheelSlipWarning ? "???" : "");
                 TableSetCell(table, 3, "{0}", FormatStrings.FormatForce(car.BrakeForceN + car.DynamicBrakeForceN, car.IsMetric));
                 TableSetCell(table, 4, "{0}", FormatStrings.FormatForce(car.FrictionForceN, car.IsMetric));
                 TableSetCell(table, 5, "{0}", FormatStrings.FormatForce(car.GravityForceN, car.IsMetric));

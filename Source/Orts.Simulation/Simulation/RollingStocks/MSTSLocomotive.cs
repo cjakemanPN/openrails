@@ -217,15 +217,18 @@ namespace Orts.Simulation.RollingStocks
         public bool LargeSteamEjectorIsOn = false;
         public bool VacuumPumpOperating = false;
         public float SteamEjectorSmallPressurePSI = 0.0f;
+        public float SteamEjectorLargePressurePSI = 0.0f;
         public bool VacuumPumpFitted;
         public bool SmallEjectorFitted = false;
         public float VacuumPumpResistanceN;
         public float EjectorSmallSteamConsumptionLbpS;
         public float EjectorLargeSteamConsumptionLbpS;
         public float SteamEjectorSmallSetting = 0.0f;
+        public float SteamEjectorLargeSetting = 0.0f;
         public float MaxVaccuumMaxPressurePSI = 110.0f;  // Value for the boiler pressure when maximum vacuum will be produced for the steam ejector 
         public float SmallEjectorFeedFraction = 0.35f;
         public float LargeEjectorFeedFraction = 1.0f;
+        public bool LargeEjectorFitted = false;
         public float VacuumPumpChargingRateInHgpS = 0.0f;
         public bool VacuumBrakeEQFitted = false;  // Flag to indicate that equalising resevoir fitted to vacuum brakes
         public float HUDNetBPLossGainPSI;
@@ -283,7 +286,7 @@ namespace Orts.Simulation.RollingStocks
         public float TrainBrakePipeLeakPSIorInHgpS = 0.0f;    // Air leakage from train brake pipe - should normally be no more then 5psi/min - default off
         public float CompressorRestartPressurePSI = 110;
         public float CompressorChargingRateM3pS = 0.075f;
-        public float MainResChargingRatePSIpS;
+        public float MainResChargingRatePSIpS = 0.4f;
         public float EngineBrakeReleaseRatePSIpS = 12.5f;
         public float EngineBrakeApplyRatePSIpS = 12.5f;
         public float BrakePipeTimeFactorS = 0.0015f;
@@ -317,6 +320,8 @@ namespace Orts.Simulation.RollingStocks
         public bool HasSmoothStruc;
 
         public float MaxContinuousForceN;
+        public float SpeedOfMaxContinuousForceMpS;  // Speed where maximum tractive effort occurs
+        public float MSTSSpeedOfMaxContinuousForceMpS;  // Speed where maximum tractive effort occurs - MSTS parameter if used
         public float ContinuousForceTimeFactor = 1800;
         public bool AntiSlip;
         public bool AdvancedAdhesionModel = false; // flag set depending upon adhesion model used.
@@ -697,6 +702,8 @@ namespace Orts.Simulation.RollingStocks
                 case "engine(maxforce": MaxForceN = stf.ReadFloatBlock(STFReader.UNITS.Force, null); break;
                 case "engine(maxcurrent": MaxCurrentA = stf.ReadFloatBlock(STFReader.UNITS.Current, null); break;
                 case "engine(maxcontinuousforce": MaxContinuousForceN = stf.ReadFloatBlock(STFReader.UNITS.Force, null); break;
+                case "engine(ortsspeedofmaxcontinuousforce": SpeedOfMaxContinuousForceMpS = stf.ReadFloatBlock(STFReader.UNITS.Speed, null); break;
+                case "engine(dieselenginespeedofmaxtractiveeffort": MSTSSpeedOfMaxContinuousForceMpS = stf.ReadFloatBlock(STFReader.UNITS.Speed, null); break;
                 case "engine(maxvelocity": MaxSpeedMpS = stf.ReadFloatBlock(STFReader.UNITS.Speed, null); break;
 
                 case "engine(type":
@@ -872,6 +879,8 @@ namespace Orts.Simulation.RollingStocks
             EngineType = locoCopy.EngineType;
             TractiveForceCurves = locoCopy.TractiveForceCurves;
             MaxContinuousForceN = locoCopy.MaxContinuousForceN;
+            SpeedOfMaxContinuousForceMpS = locoCopy.SpeedOfMaxContinuousForceMpS;
+            MSTSSpeedOfMaxContinuousForceMpS = locoCopy.MSTSSpeedOfMaxContinuousForceMpS;
             ContinuousForceTimeFactor = locoCopy.ContinuousForceTimeFactor;
             DynamicBrakeForceCurves = locoCopy.DynamicBrakeForceCurves;
             DynamicBrakeAutoBailOff = locoCopy.DynamicBrakeAutoBailOff;
@@ -1211,10 +1220,11 @@ namespace Orts.Simulation.RollingStocks
             }
 
             // Check TrainBrakesControllerMaxSystemPressure parameter for "correct" value 
-            // This is only done for vacuum brakes as the UoM can be confusing - it defaults to psi, and if no units are entered then a InHG value can be incorrectly converted.
-            if ((BrakeSystem is VacuumSinglePipe) && TrainBrakeController.MaxPressurePSI > 12.5)
+            // This is only done for vacuum brakes as the UoM can be confusing - it defaults to psi due to way parameter is read, and if units are entered then a InHG value can be incorrectly converted.
+            if ((BrakeSystem is VacuumSinglePipe) && TrainBrakeController.MaxPressurePSI > 10 && TrainBrakeController.MaxPressurePSI < 15)
             {
-                Trace.TraceInformation("TrainBrakeController.MaxPressurePSI being read as {0} Inhg, - defaulted to value of 21 InHg", Bar.ToInHg(Bar.FromPSI(TrainBrakeController.MaxPressurePSI)));
+                Trace.TraceInformation("TrainBrakeController.MaxPressurePSI being incorrectly read as {0} Inhg, - set to value of {1} InHg", TrainBrakeController.MaxPressurePSI, Bar.ToInHg(Bar.FromPSI(TrainBrakeController.MaxPressurePSI)));
+                TrainBrakeController.MaxPressurePSI = Bar.ToInHg(Bar.FromPSI(TrainBrakeController.MaxPressurePSI));
             }
 
             // Initialise Brake Time Factor
@@ -1283,7 +1293,7 @@ namespace Orts.Simulation.RollingStocks
         /// 
         protected void CorrectBrakingParams()
         {
-            if (Simulator.Settings.CorrectQuestionableBrakingParams)
+            if (Simulator.Settings.CorrectQuestionableBrakingParams || Simulator.Settings.SimpleControlPhysics)
             {
                 if (!(BrakeSystem is EPBrakeSystem) && !(BrakeSystem is VacuumSinglePipe) && !(BrakeSystem is AirTwinPipe))
                 {
@@ -1480,7 +1490,7 @@ namespace Orts.Simulation.RollingStocks
                             DynamicBrakeController.CurrentValue * 100);
                     }
 
-                    if ((Simulator.UseAdvancedAdhesion) && (!Simulator.Paused)) 
+                    if (Simulator.UseAdvancedAdhesion && !Simulator.Settings.SimpleControlPhysics && !Simulator.Paused) 
                     {
                         AdvancedAdhesion(elapsedClockSeconds); // Use advanced adhesion model
                         AdvancedAdhesionModel = true;  // Set flag to advise advanced adhesion model is in use
@@ -1887,26 +1897,53 @@ namespace Orts.Simulation.RollingStocks
         }
 
         /// <summary>
-        /// This function updates periodically the state of the steam ejector on a vacuum braked system.
+        /// This function updates periodically the state of the steam ejector or vacuum pump on a vacuum braked system.
         /// </summary>
         protected virtual void UpdateSteamEjector(float elapsedClockSeconds)
         {
-            if (TrainBrakeController.TrainBrakeControllerState == ControllerState.Release || TrainBrakeController.TrainBrakeControllerState == ControllerState.FullQuickRelease )
+            if (Simulator.Settings.SimpleControlPhysics)
+            // Simple braking - control Ejector automatically based upon the brake control position
+            // Stop ejector operation if full vacuum pressure reached
             {
-                LargeSteamEjectorIsOn = true;  // If brake is set to a release controller, then turn ejector on
+                if ((TrainBrakeController.TrainBrakeControllerState == ControllerState.Release || TrainBrakeController.TrainBrakeControllerState == ControllerState.FullQuickRelease || (TrainBrakeController.TrainBrakeControllerState == ControllerState.VacContServ)) && (this.BrakeSystem.BrakeLine1PressurePSI > Vac.ToPress(this.TrainBrakeController.MaxPressurePSI)))
+                {
+                    LargeSteamEjectorIsOn = true;  // If brake is set to a release controller, then turn ejector on
+                }
+                else
+                {
+                    LargeSteamEjectorIsOn = false; // If brake is not set to a release controller, or full vacuum reached, then turn ejector off
+                }
             }
-            else
+            else if (!LargeEjectorFitted) // Use an "automatic" large ejector when using a dreadnought style brake controller - large ejector stays on until moved back to released position
             {
-                LargeSteamEjectorIsOn = false; // If brake is not set to a release controller, then turn ejector off
+                if (TrainBrakeController.TrainBrakeControllerState == ControllerState.Release)
+                {
+                    LargeSteamEjectorIsOn = true;  // If brake is set to a release controller, then turn ejector on
+                }
+                else
+                {
+                    LargeSteamEjectorIsOn = false; // If brake is not set to a release controller, then turn ejector off
+                }
+
             }
+            else  // Advanced braking - control ejector based upon using a "manual" large ejector control setting
+            {
+                if (LargeEjectorFeedFraction > 0.05)
+                {
+                    LargeSteamEjectorIsOn = true;  // turn ejector on
+                }
+                else
+                {
+                    LargeSteamEjectorIsOn = false; // turn ejector off
+                }
+            }
+
 
             // If diesel or electric locomotive, assume vacuum pump (exhauster) is continually running.
             if (!(this is MSTSSteamLocomotive))
             {
                 VacuumPumpOperating = true;
             }
-
-
         }
 
         /// <summary>
@@ -1921,8 +1958,6 @@ namespace Orts.Simulation.RollingStocks
             else if ((VacuumMainResVacuumPSIAorInHg < VacuumBrakesMainResMaxVacuumPSIAorInHg || !AuxPowerOn) && VacuumExhausterIsOn)
                 SignalEvent(Event.VacuumExhausterOff);
 
-            if (VacuumExhausterIsOn)
-                VacuumMainResVacuumPSIAorInHg -= elapsedClockSeconds * VacuumBrakesMainResChargingRatePSIAorInHgpS;
         }
 
         /// <summary>
@@ -2085,13 +2120,12 @@ namespace Orts.Simulation.RollingStocks
             
             if (LocoNumDrvWheels <= 0)
                 return;
-            //float max0 = MassKG * 9.8f * Adhesion3 / NumWheelsAdhesionFactor;   //Not used
 
             //Curtius-Kniffler computation
-            float uMax = 1.3f * (7.5f / (AbsSpeedMpS * 3.6f + 44.0f) + 0.161f); // Curtius - Kniffler equation
-            float adhesionUtil = 0.95f;   //Adhesion utilization
-
-            float max0 = MassKG * 9.81f * adhesionUtil * uMax;  //Ahesion limit in [N]
+            // Set to a high level of adhesion to ensure that locomotive rarely slips in dry mode
+            float uMax = 1.3f * (7.5f / (AbsSpeedMpS + 44.0f) + 0.161f); // Curtius - Kniffler equation
+ 
+            float max0 = DrvWheelWeightKg * 9.81f * uMax;  //Ahesion limit in [N]
             float max1;
 
             if (Simulator.WeatherType == WeatherType.Rain || Simulator.WeatherType == WeatherType.Snow)
@@ -2102,11 +2136,11 @@ namespace Orts.Simulation.RollingStocks
                     Train.SlipperySpotDistanceM = Train.SlipperySpotLengthM + 2000 * (float)Simulator.Random.NextDouble();
                 }
                 if (Train.SlipperySpotDistanceM < Train.SlipperySpotLengthM)
-                    max0 *= .8f;
+                    max0 *= 0.8f;
                 if (Simulator.WeatherType == WeatherType.Rain)
-                    max0 *= .8f;
+                    max0 *= 0.8f;
                 else
-                    max0 *= .7f;
+                    max0 *= 0.7f;
             }
             //float max1 = (Sander ? .95f : Adhesion2) * max0;  //Not used this way
             max1 = MaxForceN;
@@ -2357,24 +2391,24 @@ namespace Orts.Simulation.RollingStocks
                 if (Simulator.WeatherType == WeatherType.Rain) // Wet weather
                 {
                     if (Simulator.Settings.AdhesionProportionalToWeather && AdvancedAdhesionModel && !Simulator.Paused)  // Adjust clear weather for precipitation presence - base friction value will be approximately between 0.15 and 0.2
-                        // ie base value between 0.607 and 0.45 
-                        // note lowest friction will be for drizzle rain; friction will increase for precipitation both higher and lower than drizzle rail
+                    // ie base value between 0.8 and 1.0 (TODO)  
+                    // note lowest friction will be for drizzle rain; friction will increase for precipitation both higher and lower than drizzle rail
                     {
-                       float pric = Simulator.Weather.PricipitationIntensityPPSPM2 * 1000;
+                        float pric = Simulator.Weather.PricipitationIntensityPPSPM2 * 1000;
                 // precipitation will calculate a value between 0.15 (light rain) and 0.2 (heavy rain) - this will be a factor that is used to adjust the base value - assume linear value between upper and lower precipitation values
                         if (pric >= 0.5)
-                            BaseFrictionCoefficientFactor = Math.Min((pric * 0.0078f + 0.45f), 0.607f);
+                            BaseFrictionCoefficientFactor = Math.Min((pric * 0.0078f + 0.45f), 0.8f);
                         else
-                            BaseFrictionCoefficientFactor = 0.4539f + 1.0922f * (0.5f - pric);
+                            BaseFrictionCoefficientFactor = Math.Min((0.4539f + 1.0922f * (0.5f - pric)), 0.8f);
                     }
-                    else // if not proportional to precipitation use fixed friction value approximately equal to 0.2, thus factor will be 0.6 x friction coefficient of 0.33
+                    else // if not proportional to precipitation use fixed friction value of 0.8 x friction coefficient of 0.33
                     {
-                        BaseFrictionCoefficientFactor = 0.607f;
+                        BaseFrictionCoefficientFactor = 0.8f;
                     }
                 }
                 else     // Snow weather
                 {
-                    BaseFrictionCoefficientFactor = 0.4f;
+                    BaseFrictionCoefficientFactor = 0.6f;
                 }
             }
             else // Default to Dry (Clear) weather
@@ -2399,7 +2433,13 @@ namespace Orts.Simulation.RollingStocks
 
             }
 
-            Train.WagonCoefficientFriction = BaseuMax * BaseFrictionCoefficientFactor;  // Find friction coefficient factor for wagons
+            // For wagons use base Curtius-Kniffler adhesion factor - u = 0.33
+            float WagonCurtius_KnifflerA = 7.5f;
+            float WagonCurtius_KnifflerB = 44.0f;
+            float WagonCurtius_KnifflerC = 0.161f;
+            
+            float WagonBaseuMax = (WagonCurtius_KnifflerA / (MpS.ToKpH(AbsSpeedMpS) + WagonCurtius_KnifflerB) + WagonCurtius_KnifflerC);
+            Train.WagonCoefficientFriction = WagonBaseuMax * BaseFrictionCoefficientFactor;  // Find friction coefficient factor for wagons based upon environmental conditions
             WagonCoefficientFrictionHUD = Train.WagonCoefficientFriction; // Save value for HUD display
 
             if (EngineType == EngineTypes.Steam && SteamDrvWheelWeightLbs < 10000 && Simulator.WeatherType == WeatherType.Clear)
