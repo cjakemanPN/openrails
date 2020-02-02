@@ -2299,6 +2299,7 @@ namespace Orts.Simulation.RollingStocks
             }
             else // Ensure water scoop values are zero if not taking water.
             {
+                // test
                 WaterScoopDragForceN = 0f;
                 WaterScoopedQuantityLpS = 0;
                 WaterScoopInputAmountL = 0;
